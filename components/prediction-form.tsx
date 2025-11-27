@@ -36,15 +36,19 @@ export function PredictionForm({ student, onClose, onResults }: PredictionFormPr
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: value ? Number.parseFloat(value) : "",
+      [name]: value === "" ? "" : Number.parseFloat(value),
     }))
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate inputs
-    if (!formData.asistencia || !formData.horasSueno || !formData.horasEstudio || !formData.saludMental) {
+    if (
+      formData.asistencia === "" ||
+      formData.horasSueno === "" ||
+      formData.horasEstudio === "" ||
+      formData.saludMental === ""
+    ) {
       alert("Por favor completa todos los campos")
       return
     }
@@ -56,7 +60,15 @@ export function PredictionForm({ student, onClose, onResults }: PredictionFormPr
       saludMental: formData.saludMental,
     })
 
-    setResults(prediction)
+    setResults({
+      ...prediction,
+      evaluation: {
+        asistencia: formData.asistencia,
+        horasSueno: formData.horasSueno,
+        horasEstudio: formData.horasEstudio,
+        saludMental: formData.saludMental,
+      },
+    })
     setShowFeedback(true)
   }
 
@@ -91,10 +103,8 @@ export function PredictionForm({ student, onClose, onResults }: PredictionFormPr
               <Input
                 id="asistencia"
                 name="asistencia"
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
+                type="text"
+                inputMode="numeric"
                 placeholder="Ej: 85"
                 value={formData.asistencia}
                 onChange={handleInputChange}
@@ -111,10 +121,8 @@ export function PredictionForm({ student, onClose, onResults }: PredictionFormPr
               <Input
                 id="horasSueno"
                 name="horasSueno"
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
+                type="text"
+                inputMode="numeric"
                 placeholder="Ej: 7"
                 value={formData.horasSueno}
                 onChange={handleInputChange}
@@ -131,10 +139,8 @@ export function PredictionForm({ student, onClose, onResults }: PredictionFormPr
               <Input
                 id="horasEstudio"
                 name="horasEstudio"
-                type="number"
-                min="0"
-                max="9"
-                step="0.1"
+                type="text"
+                inputMode="numeric"
                 placeholder="Ej: 4"
                 value={formData.horasEstudio}
                 onChange={handleInputChange}
@@ -151,10 +157,8 @@ export function PredictionForm({ student, onClose, onResults }: PredictionFormPr
               <Input
                 id="saludMental"
                 name="saludMental"
-                type="number"
-                min="0"
-                max="10"
-                step="0.1"
+                type="text"
+                inputMode="numeric"
                 placeholder="Ej: 7"
                 value={formData.saludMental}
                 onChange={handleInputChange}

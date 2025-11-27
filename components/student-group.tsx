@@ -2,16 +2,32 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Users, TrendingUp, AlertCircle, CheckCircle2 } from "lucide-react"
+import { Users, TrendingUp, AlertCircle, CheckCircle2, Edit2 } from "lucide-react"
+import { useState } from "react"
+import { InlineEvaluationForm } from "./inline-evaluation-form"
+import { Button } from "@/components/ui/button"
 
 interface Student {
   id: string
   name: string
   email: string
   group: number
+  evaluation?: {
+    asistencia: number
+    horasSueno: number
+    horasEstudio: number
+    saludMental: number
+  }
   results?: {
     calificacion: string
     riesgo: string
+    score?: number
+    detalles?: {
+      asistencia: string
+      sueno: string
+      estudio: string
+      saludMental: string
+    }
   }
 }
 
@@ -27,10 +43,20 @@ interface StudentGroupProps {
   }
   onSelectStudent: (student: Student) => void
   selectedStudent: Student | null
+  onEvaluateStudent: (student: Student, evaluation: any) => void
 }
 
-export function StudentGroup({ groupNum, students, stats, onSelectStudent, selectedStudent }: StudentGroupProps) {
-  const getResultBadge = (calificacion?: string) => {
+export function StudentGroup({
+  groupNum,
+  students,
+  stats,
+  onSelectStudent,
+  selectedStudent,
+  onEvaluateStudent,
+}: StudentGroupProps) {
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null)
+
+  const getResultBadge = (calificacion?: string, score?: number) => {
     if (!calificacion)
       return (
         <Badge variant="outline" className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
@@ -40,20 +66,27 @@ export function StudentGroup({ groupNum, students, stats, onSelectStudent, selec
     if (calificacion === "alto")
       return (
         <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs">
-          <CheckCircle2 className="w-3 h-3 mr-1" /> Alto
+          <CheckCircle2 className="w-3 h-3 mr-1" /> Rendimiento: Alto {score && `(${score}%)`}
         </Badge>
       )
     if (calificacion === "regular")
       return (
         <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs">
-          <TrendingUp className="w-3 h-3 mr-1" /> Regular
+          <TrendingUp className="w-3 h-3 mr-1" /> Rendimiento: Regular {score && `(${score}%)`}
         </Badge>
       )
     return (
       <Badge className="bg-gradient-to-r from-red-500 to-rose-500 text-white text-xs">
-        <AlertCircle className="w-3 h-3 mr-1" /> Bajo
+        <AlertCircle className="w-3 h-3 mr-1" /> Rendimiento: Bajo {score && `(${score}%)`}
       </Badge>
     )
+  }
+
+  const getRiskBadge = (riesgo?: string) => {
+    if (!riesgo) return null
+    if (riesgo === "bajo") return <Badge className="bg-green-500/80 text-white text-xs">Bajo Riesgo</Badge>
+    if (riesgo === "medio") return <Badge className="bg-amber-500/80 text-white text-xs">Riesgo Medio</Badge>
+    return <Badge className="bg-red-500/80 text-white text-xs">Alto Riesgo</Badge>
   }
 
   return (
@@ -98,20 +131,120 @@ export function StudentGroup({ groupNum, students, stats, onSelectStudent, selec
         <CardContent className="p-0">
           <div className="divide-y divide-border">
             {students.map((student) => (
-              <div
-                key={student.id}
-                onClick={() => onSelectStudent(student)}
-                className={`flex items-center justify-between p-4 cursor-pointer transition-all duration-200 ${
-                  selectedStudent?.id === student.id
-                    ? "bg-gradient-to-r from-primary/10 to-accent/10 border-l-4 border-primary"
-                    : "hover:bg-gradient-to-r hover:from-muted/50 hover:to-muted/25 hover:border-l-4 hover:border-muted"
-                }`}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-foreground truncate">{student.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{student.email}</p>
+              <div key={student.id}>
+                <div
+                  onClick={() => setExpandedStudentId(expandedStudentId === student.id ? null : student.id)}
+                  className={`cursor-pointer transition-all duration-200 hover:bg-accent/5 ${
+                    expandedStudentId === student.id
+                      ? "bg-primary/5 border-l-4 border-primary"
+                      : "border-l-4 border-transparent"
+                  }`}
+                >
+                  <div className="p-5 flex items-center justify-between gap-4">
+                    <div className="flex-shrink-0 min-w-48">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">
+                        Nombre y Apellidos
+                      </p>
+                      <p className="font-bold text-lg text-foreground">{student.name}</p>
+                    </div>
+
+                    {student.evaluation && student.results ? (
+                      <div className="flex-1 flex items-center gap-6 justify-start">
+                        {/* Asistencia */}
+                        <div className="flex flex-col items-center min-w-fit">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">
+                            Asistencia
+                          </p>
+                          <p className="font-bold text-lg text-orange-600 dark:text-orange-400">
+                            {student.evaluation.asistencia}%
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">{student.results.detalles?.asistencia}</p>
+                        </div>
+
+                        {/* Horas de Sueño */}
+                        <div className="flex flex-col items-center min-w-fit">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">Sueño</p>
+                          <p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">
+                            {student.evaluation.horasSueno} hrs
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">{student.results.detalles?.sueno}</p>
+                        </div>
+
+                        {/* Horas de Estudio */}
+                        <div className="flex flex-col items-center min-w-fit">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">
+                            Estudio
+                          </p>
+                          <p className="font-bold text-lg text-green-600 dark:text-green-400">
+                            {student.evaluation.horasEstudio} hrs
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">{student.results.detalles?.estudio}</p>
+                        </div>
+
+                        {/* Salud Mental */}
+                        <div className="flex flex-col items-center min-w-fit">
+                          <p className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">
+                            Salud Mental
+                          </p>
+                          <p className="font-bold text-lg text-rose-600 dark:text-rose-400">
+                            {student.evaluation.saludMental}/10
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">{student.results.detalles?.saludMental}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1"></div>
+                    )}
+
+                    <div className="flex-shrink-0 flex items-center gap-2 min-w-fit">
+                      {student.results && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setExpandedStudentId(expandedStudentId === student.id ? null : student.id)
+                          }}
+                          className="text-primary hover:bg-primary/10"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                      <div className="flex flex-col gap-2">
+                        {student.results
+                          ? getResultBadge(student.results.calificacion, student.results.score)
+                          : getResultBadge()}
+                        {student.results && student.results.riesgo && (
+                          <div className="flex items-center gap-1 text-xs font-semibold">
+                            <span className="text-muted-foreground">Riesgo:</span>
+                            {student.results.riesgo === "bajo" && (
+                              <Badge className="bg-green-500/80 text-white text-xs">Bajo (20%)</Badge>
+                            )}
+                            {student.results.riesgo === "medio" && (
+                              <Badge className="bg-amber-500/80 text-white text-xs">Medio (50%)</Badge>
+                            )}
+                            {student.results.riesgo === "alto" && (
+                              <Badge className="bg-red-500/80 text-white text-xs">Alto (80%)</Badge>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-4 flex-shrink-0">{getResultBadge(student.results?.calificacion)}</div>
+
+                {expandedStudentId === student.id && (
+                  <div className="bg-gradient-to-b from-primary/5 to-transparent p-6 border-t border-primary/20">
+                    <InlineEvaluationForm
+                      student={student}
+                      onClose={() => setExpandedStudentId(null)}
+                      onSubmit={(evaluation) => {
+                        onEvaluateStudent(student, evaluation)
+                        setExpandedStudentId(null)
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>

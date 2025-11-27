@@ -22,9 +22,22 @@ interface Student {
   name: string
   email: string
   group: number
+  evaluation?: {
+    asistencia: number
+    horasSueno: number
+    horasEstudio: number
+    saludMental: number
+  }
   results?: {
     calificacion: string
     riesgo: string
+    score?: number
+    detalles?: {
+      asistencia: string
+      sueno: string
+      estudio: string
+      saludMental: string
+    }
   }
 }
 
@@ -33,7 +46,6 @@ interface ResultsDashboardProps {
 }
 
 export function ResultsDashboard({ students }: ResultsDashboardProps) {
-  // Calculate overall statistics
   const evaluatedStudents = students.filter((s) => s.results)
   const totalEvaluated = evaluatedStudents.length
 
@@ -49,7 +61,6 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
     alto: evaluatedStudents.filter((s) => s.results?.riesgo === "alto").length,
   }
 
-  // Group statistics
   const groupStats = [1, 2, 3].map((groupNum) => {
     const groupStudents = students.filter((s) => s.group === groupNum)
     const groupEvaluated = groupStudents.filter((s) => s.results)
@@ -75,7 +86,6 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
     { name: "Riesgo Alto", value: riskCount.alto, fill: "#ef4444" },
   ]
 
-  // State for expandable sections
   const [expandPerformance, setExpandPerformance] = useState(false)
   const [expandRisk, setExpandRisk] = useState(false)
 
@@ -147,7 +157,6 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Performance Distribution */}
         <Card>
           <CardHeader>
             <CardTitle>Distribución de Rendimiento</CardTitle>
@@ -176,7 +185,6 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
           </CardContent>
         </Card>
 
-        {/* Risk Distribution */}
         <Card>
           <CardHeader>
             <CardTitle>Distribución de Riesgo de Deserción</CardTitle>
@@ -278,7 +286,7 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Listado de Estudiantes por Rendimiento</CardTitle>
-              <CardDescription>Detalle de estudiantes en cada nivel de desempeño</CardDescription>
+              <CardDescription>Detalle completo de evaluación por cada estudiante</CardDescription>
             </div>
             <ChevronDown className={`w-5 h-5 transition-transform ${expandPerformance ? "rotate-180" : ""}`} />
           </div>
@@ -295,27 +303,39 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-green-50 dark:bg-green-950/20">
-                      <th className="text-left py-2 px-4 font-semibold">Estudiante</th>
-                      <th className="text-left py-2 px-4 font-semibold">Grupo</th>
-                      <th className="text-center py-2 px-4 font-semibold">Score</th>
+                      <th className="text-left py-2 px-3 font-semibold">Estudiante</th>
+                      <th className="text-center py-2 px-3 font-semibold">Grupo</th>
+                      <th className="text-center py-2 px-3 font-semibold">Asistencia %</th>
+                      <th className="text-center py-2 px-3 font-semibold">Sueño hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estudio hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Salud Mental</th>
+                      <th className="text-center py-2 px-3 font-semibold">Score</th>
                     </tr>
                   </thead>
                   <tbody>
                     {studentsByPerformance.alto.length > 0 ? (
                       studentsByPerformance.alto.map((student) => (
                         <tr key={student.id} className="border-b hover:bg-green-50/50 dark:hover:bg-green-950/10">
-                          <td className="py-3 px-4">{student.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">Grupo {student.group}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-xs font-semibold">
-                              70+
+                          <td className="py-3 px-3 font-medium">{student.name}</td>
+                          <td className="py-3 px-3 text-center text-muted-foreground">G{student.group}</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.asistencia.toFixed(1) || "-"}%</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.horasSueno.toFixed(1) || "-"}</td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.horasEstudio.toFixed(1) || "-"}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.saludMental.toFixed(1) || "-"}/10
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs font-semibold">
+                              {student.results?.score || "N/A"}
                             </span>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-4 px-4 text-center text-muted-foreground">
+                        <td colSpan={7} className="py-4 px-3 text-center text-muted-foreground">
                           No hay estudiantes en este nivel
                         </td>
                       </tr>
@@ -335,27 +355,39 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-amber-50 dark:bg-amber-950/20">
-                      <th className="text-left py-2 px-4 font-semibold">Estudiante</th>
-                      <th className="text-left py-2 px-4 font-semibold">Grupo</th>
-                      <th className="text-center py-2 px-4 font-semibold">Score</th>
+                      <th className="text-left py-2 px-3 font-semibold">Estudiante</th>
+                      <th className="text-center py-2 px-3 font-semibold">Grupo</th>
+                      <th className="text-center py-2 px-3 font-semibold">Asistencia %</th>
+                      <th className="text-center py-2 px-3 font-semibold">Sueño hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estudio hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Salud Mental</th>
+                      <th className="text-center py-2 px-3 font-semibold">Score</th>
                     </tr>
                   </thead>
                   <tbody>
                     {studentsByPerformance.regular.length > 0 ? (
                       studentsByPerformance.regular.map((student) => (
                         <tr key={student.id} className="border-b hover:bg-amber-50/50 dark:hover:bg-amber-950/10">
-                          <td className="py-3 px-4">{student.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">Grupo {student.group}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="inline-block bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full text-xs font-semibold">
-                              50-70
+                          <td className="py-3 px-3 font-medium">{student.name}</td>
+                          <td className="py-3 px-3 text-center text-muted-foreground">G{student.group}</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.asistencia.toFixed(1) || "-"}%</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.horasSueno.toFixed(1) || "-"}</td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.horasEstudio.toFixed(1) || "-"}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.saludMental.toFixed(1) || "-"}/10
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-block bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full text-xs font-semibold">
+                              {student.results?.score || "N/A"}
                             </span>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-4 px-4 text-center text-muted-foreground">
+                        <td colSpan={7} className="py-4 px-3 text-center text-muted-foreground">
                           No hay estudiantes en este nivel
                         </td>
                       </tr>
@@ -375,27 +407,39 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-red-50 dark:bg-red-950/20">
-                      <th className="text-left py-2 px-4 font-semibold">Estudiante</th>
-                      <th className="text-left py-2 px-4 font-semibold">Grupo</th>
-                      <th className="text-center py-2 px-4 font-semibold">Score</th>
+                      <th className="text-left py-2 px-3 font-semibold">Estudiante</th>
+                      <th className="text-center py-2 px-3 font-semibold">Grupo</th>
+                      <th className="text-center py-2 px-3 font-semibold">Asistencia %</th>
+                      <th className="text-center py-2 px-3 font-semibold">Sueño hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estudio hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Salud Mental</th>
+                      <th className="text-center py-2 px-3 font-semibold">Score</th>
                     </tr>
                   </thead>
                   <tbody>
                     {studentsByPerformance.bajo.length > 0 ? (
                       studentsByPerformance.bajo.map((student) => (
                         <tr key={student.id} className="border-b hover:bg-red-50/50 dark:hover:bg-red-950/10">
-                          <td className="py-3 px-4">{student.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">Grupo {student.group}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="inline-block bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1 rounded-full text-xs font-semibold">
-                              0-50
+                          <td className="py-3 px-3 font-medium">{student.name}</td>
+                          <td className="py-3 px-3 text-center text-muted-foreground">G{student.group}</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.asistencia.toFixed(1) || "-"}%</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.horasSueno.toFixed(1) || "-"}</td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.horasEstudio.toFixed(1) || "-"}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.saludMental.toFixed(1) || "-"}/10
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-block bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-1 rounded-full text-xs font-semibold">
+                              {student.results?.score || "N/A"}
                             </span>
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-4 px-4 text-center text-muted-foreground">
+                        <td colSpan={7} className="py-4 px-3 text-center text-muted-foreground">
                           No hay estudiantes en este nivel
                         </td>
                       </tr>
@@ -416,7 +460,7 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Listado de Estudiantes por Riesgo de Deserción</CardTitle>
-              <CardDescription>Detalle de estudiantes según riesgo académico</CardDescription>
+              <CardDescription>Detalle completo de evaluación por cada estudiante</CardDescription>
             </div>
             <ChevronDown className={`w-5 h-5 transition-transform ${expandRisk ? "rotate-180" : ""}`} />
           </div>
@@ -433,19 +477,31 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-green-50 dark:bg-green-950/20">
-                      <th className="text-left py-2 px-4 font-semibold">Estudiante</th>
-                      <th className="text-left py-2 px-4 font-semibold">Grupo</th>
-                      <th className="text-center py-2 px-4 font-semibold">Estado</th>
+                      <th className="text-left py-2 px-3 font-semibold">Estudiante</th>
+                      <th className="text-center py-2 px-3 font-semibold">Grupo</th>
+                      <th className="text-center py-2 px-3 font-semibold">Asistencia %</th>
+                      <th className="text-center py-2 px-3 font-semibold">Sueño hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estudio hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Salud Mental</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {studentsByRisk.bajo.length > 0 ? (
                       studentsByRisk.bajo.map((student) => (
                         <tr key={student.id} className="border-b hover:bg-green-50/50 dark:hover:bg-green-950/10">
-                          <td className="py-3 px-4">{student.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">Grupo {student.group}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-xs font-semibold">
+                          <td className="py-3 px-3 font-medium">{student.name}</td>
+                          <td className="py-3 px-3 text-center text-muted-foreground">G{student.group}</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.asistencia.toFixed(1) || "-"}%</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.horasSueno.toFixed(1) || "-"}</td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.horasEstudio.toFixed(1) || "-"}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.saludMental.toFixed(1) || "-"}/10
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs font-semibold">
                               Seguro
                             </span>
                           </td>
@@ -453,7 +509,7 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-4 px-4 text-center text-muted-foreground">
+                        <td colSpan={7} className="py-4 px-3 text-center text-muted-foreground">
                           No hay estudiantes en este nivel
                         </td>
                       </tr>
@@ -473,19 +529,31 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-amber-50 dark:bg-amber-950/20">
-                      <th className="text-left py-2 px-4 font-semibold">Estudiante</th>
-                      <th className="text-left py-2 px-4 font-semibold">Grupo</th>
-                      <th className="text-center py-2 px-4 font-semibold">Estado</th>
+                      <th className="text-left py-2 px-3 font-semibold">Estudiante</th>
+                      <th className="text-center py-2 px-3 font-semibold">Grupo</th>
+                      <th className="text-center py-2 px-3 font-semibold">Asistencia %</th>
+                      <th className="text-center py-2 px-3 font-semibold">Sueño hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estudio hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Salud Mental</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {studentsByRisk.medio.length > 0 ? (
                       studentsByRisk.medio.map((student) => (
                         <tr key={student.id} className="border-b hover:bg-amber-50/50 dark:hover:bg-amber-950/10">
-                          <td className="py-3 px-4">{student.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">Grupo {student.group}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="inline-block bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full text-xs font-semibold">
+                          <td className="py-3 px-3 font-medium">{student.name}</td>
+                          <td className="py-3 px-3 text-center text-muted-foreground">G{student.group}</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.asistencia.toFixed(1) || "-"}%</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.horasSueno.toFixed(1) || "-"}</td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.horasEstudio.toFixed(1) || "-"}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.saludMental.toFixed(1) || "-"}/10
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-block bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-1 rounded-full text-xs font-semibold">
                               Alerta
                             </span>
                           </td>
@@ -493,7 +561,7 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-4 px-4 text-center text-muted-foreground">
+                        <td colSpan={7} className="py-4 px-3 text-center text-muted-foreground">
                           No hay estudiantes en este nivel
                         </td>
                       </tr>
@@ -513,19 +581,31 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-red-50 dark:bg-red-950/20">
-                      <th className="text-left py-2 px-4 font-semibold">Estudiante</th>
-                      <th className="text-left py-2 px-4 font-semibold">Grupo</th>
-                      <th className="text-center py-2 px-4 font-semibold">Estado</th>
+                      <th className="text-left py-2 px-3 font-semibold">Estudiante</th>
+                      <th className="text-center py-2 px-3 font-semibold">Grupo</th>
+                      <th className="text-center py-2 px-3 font-semibold">Asistencia %</th>
+                      <th className="text-center py-2 px-3 font-semibold">Sueño hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estudio hrs</th>
+                      <th className="text-center py-2 px-3 font-semibold">Salud Mental</th>
+                      <th className="text-center py-2 px-3 font-semibold">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {studentsByRisk.alto.length > 0 ? (
                       studentsByRisk.alto.map((student) => (
                         <tr key={student.id} className="border-b hover:bg-red-50/50 dark:hover:bg-red-950/10">
-                          <td className="py-3 px-4">{student.name}</td>
-                          <td className="py-3 px-4 text-muted-foreground">Grupo {student.group}</td>
-                          <td className="py-3 px-4 text-center">
-                            <span className="inline-block bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-3 py-1 rounded-full text-xs font-semibold">
+                          <td className="py-3 px-3 font-medium">{student.name}</td>
+                          <td className="py-3 px-3 text-center text-muted-foreground">G{student.group}</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.asistencia.toFixed(1) || "-"}%</td>
+                          <td className="py-3 px-3 text-center">{student.evaluation?.horasSueno.toFixed(1) || "-"}</td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.horasEstudio.toFixed(1) || "-"}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {student.evaluation?.saludMental.toFixed(1) || "-"}/10
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className="inline-block bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-1 rounded-full text-xs font-semibold">
                               Crítico
                             </span>
                           </td>
@@ -533,7 +613,7 @@ export function ResultsDashboard({ students }: ResultsDashboardProps) {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={3} className="py-4 px-4 text-center text-muted-foreground">
+                        <td colSpan={7} className="py-4 px-3 text-center text-muted-foreground">
                           No hay estudiantes en este nivel
                         </td>
                       </tr>

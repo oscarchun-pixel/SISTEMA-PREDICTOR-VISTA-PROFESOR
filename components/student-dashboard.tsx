@@ -3,19 +3,32 @@
 import { useState } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StudentGroup } from "@/components/student-group"
-import { PredictionForm } from "@/components/prediction-form"
 import { ResultsDashboard } from "@/components/results-dashboard"
+import { EvaluationReport } from "@/components/evaluation-report"
 import { studentNames } from "@/lib/student-names"
-import { BookOpen, BarChart3 } from "lucide-react"
+import { BookOpen, BarChart3, FileText } from "lucide-react"
 
 interface Student {
   id: string
   name: string
   email: string
   group: number
+  evaluation?: {
+    asistencia: number
+    horasSueno: number
+    horasEstudio: number
+    saludMental: number
+  }
   results?: {
     calificacion: string
     riesgo: string
+    score?: number
+    detalles?: {
+      asistencia: string
+      sueno: string
+      estudio: string
+      saludMental: string
+    }
   }
 }
 
@@ -29,11 +42,23 @@ const initialStudents: Student[] = studentNames.map((student, index) => ({
 export function StudentDashboard() {
   const [students, setStudents] = useState<Student[]>(initialStudents)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-  const [showResults, setShowResults] = useState(false)
+  const [activeTab, setActiveTab] = useState("estudiantes")
 
   const updateStudentResults = (studentId: string, results: any) => {
-    setStudents(students.map((s) => (s.id === studentId ? { ...s, results } : s)))
-    setSelectedStudent(null)
+    setStudents(students.map((s) => (s.id === studentId ? { ...s, ...results } : s)))
+  }
+
+  const handleEvaluateStudent = (student: Student, evaluation: any) => {
+    const resultsData = {
+      evaluation: evaluation.evaluation,
+      results: {
+        calificacion: evaluation.calificacion,
+        riesgo: evaluation.riesgo,
+        score: evaluation.score,
+        detalles: evaluation.detalles,
+      },
+    }
+    updateStudentResults(student.id, resultsData)
   }
 
   const getGroupStats = (groupNum: number) => {
@@ -96,9 +121,9 @@ export function StudentDashboard() {
         {/* Navigation Buttons */}
         <div className="flex gap-3 mb-8">
           <button
-            onClick={() => setShowResults(false)}
+            onClick={() => setActiveTab("estudiantes")}
             className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-              !showResults
+              activeTab === "estudiantes"
                 ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:shadow-xl"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
@@ -107,9 +132,20 @@ export function StudentDashboard() {
             Estudiantes
           </button>
           <button
-            onClick={() => setShowResults(true)}
+            onClick={() => setActiveTab("reporte")}
             className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
-              showResults
+              activeTab === "reporte"
+                ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:shadow-xl"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            <FileText className="w-5 h-5" />
+            Reporte
+          </button>
+          <button
+            onClick={() => setActiveTab("analisis")}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${
+              activeTab === "analisis"
                 ? "bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:shadow-xl"
                 : "bg-muted text-muted-foreground hover:bg-muted/80"
             }`}
@@ -119,7 +155,7 @@ export function StudentDashboard() {
           </button>
         </div>
 
-        {!showResults ? (
+        {activeTab === "estudiantes" && (
           <>
             {/* Tabs por grupo */}
             <div className="bg-white dark:bg-card rounded-xl border border-border shadow-sm overflow-hidden">
@@ -153,6 +189,7 @@ export function StudentDashboard() {
                       stats={getGroupStats(1)}
                       onSelectStudent={setSelectedStudent}
                       selectedStudent={selectedStudent}
+                      onEvaluateStudent={handleEvaluateStudent}
                     />
                   </TabsContent>
 
@@ -163,6 +200,7 @@ export function StudentDashboard() {
                       stats={getGroupStats(2)}
                       onSelectStudent={setSelectedStudent}
                       selectedStudent={selectedStudent}
+                      onEvaluateStudent={handleEvaluateStudent}
                     />
                   </TabsContent>
 
@@ -173,24 +211,18 @@ export function StudentDashboard() {
                       stats={getGroupStats(3)}
                       onSelectStudent={setSelectedStudent}
                       selectedStudent={selectedStudent}
+                      onEvaluateStudent={handleEvaluateStudent}
                     />
                   </TabsContent>
                 </div>
               </Tabs>
             </div>
-
-            {/* Prediction Form */}
-            {selectedStudent && (
-              <PredictionForm
-                student={selectedStudent}
-                onClose={() => setSelectedStudent(null)}
-                onResults={(results) => updateStudentResults(selectedStudent.id, results)}
-              />
-            )}
           </>
-        ) : (
-          <ResultsDashboard students={students} />
         )}
+
+        {activeTab === "reporte" && <EvaluationReport students={students} />}
+
+        {activeTab === "analisis" && <ResultsDashboard students={students} />}
       </div>
     </div>
   )
